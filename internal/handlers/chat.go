@@ -8,10 +8,16 @@ import (
 )
 
 func CreateChat(w http.ResponseWriter, r *http.Request) {
-	var chat models.Chat
-	if err := json.NewDecoder(r.Body).Decode(&chat); err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
-		return
+	// Automatically generate the number for the chat by finding the max number in the DB and incrementing it
+	var lastChat models.Chat
+	if err := database.DB.Order("number desc").First(&lastChat).Error; err != nil {
+		// If no chats exist, start from number 1
+		lastChat.Number = 0
+	}
+
+	// Create a new chat with the incremented number
+	chat := models.Chat{
+		Number: lastChat.Number + 1,
 	}
 
 	// Insert the chat into the database using GORM's Create method
@@ -20,7 +26,13 @@ func CreateChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Return the newly created chat
+	// Return the generated number in the response
+	response := map[string]interface{}{
+		"number": chat.Number,
+	}
+
+	// Set the response header and return the response
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(chat)
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(response)
 }
