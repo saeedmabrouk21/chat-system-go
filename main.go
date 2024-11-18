@@ -12,6 +12,12 @@ func main() {
 		log.Fatal("Could not connect to the database:", err)
 	}
 
+	// Migrate the database schema
+	if err := database.Migrate(); err != nil {
+		log.Fatal("Could not migrate database:", err)
+	}
+
+	// Setup routes
 	http.HandleFunc("/chats", handlers.CreateChat)
 	http.HandleFunc("/messages", handlers.CreateMessage)
 

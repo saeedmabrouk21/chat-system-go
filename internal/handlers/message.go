@@ -14,17 +14,13 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Use a SQL query to insert the message
-	query := "INSERT INTO messages (chat_id, body, number) VALUES (?, ?, ?)"
-	result, err := database.DB.Exec(query, message.ChatID, message.Body, message.Number)
-	if err != nil {
+	// Insert the message into the database using GORM's Create method
+	if err := database.DB.Create(&message).Error; err != nil {
 		http.Error(w, "Error inserting message", http.StatusInternalServerError)
 		return
 	}
 
-	id, _ := result.LastInsertId()
-	message.ID = int(id)
-
+	// Return the newly created message
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(message)
 }
